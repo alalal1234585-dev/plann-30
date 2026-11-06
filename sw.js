@@ -1,5 +1,5 @@
 // Service worker: caches the app shell so it opens offline, and shows reminder notifications.
-const CACHE = 'plan30-v1';
+const CACHE = 'plan30-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -30,5 +30,20 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     for (const c of list) { if ('focus' in c) return c.focus(); }
     return self.clients.openWindow('./');
+  }));
+});
+
+// Server-sent reminder (Web Push). Shows even when the app is closed.
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) { data = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(data.title || 'خطة 30 يوماً', {
+    body: data.body || '',
+    tag: data.tag || 'plan30',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    lang: 'ar',
+    dir: 'rtl',
+    renotify: false
   }));
 });

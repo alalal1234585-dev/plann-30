@@ -149,6 +149,10 @@ const WEEKS = [
   'الأسبوع 4: حافظ على الروتين، ولا ترفع الشدة لمجرد اقتراب نهاية الشهر.'
 ];
 const KEY = 'plan30-v1';
+const VAPID_PUBLIC = 'BNclb_2LQn_gPyehm83gCk94zfpbFmkew3AB1WOcTyh4uOatSJUQRs7Avd0H14pOwM9Vw8-GgvSRuIYYBnHOuAU';
+const API = './api';
+let SUB = null; // PushSubscription once notifications are on; reminders then come from the server
+
 
 /* ---------- storage (per-browser; every access guarded) ---------- */
 function ymd(d) { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
@@ -158,7 +162,7 @@ function load() {
   try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { s = {}; }
   return Object.assign({ start: ymd(new Date()), days: {}, weights: {}, shop: {}, fired: {}, notif: { on: false, times: { weigh: '07:00', lunch: '12:00', ex: '18:00', dinner: '19:00', log: '21:30' } } }, s);
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: keep working in memory */ } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: keep working in memory */ } scheduleSync(); }
 let S = load();
 
 /* ---------- helpers ---------- */
@@ -386,7 +390,7 @@ async function notify(title, body) {
   }
 }
 function tick() {
-  if (!S.notif.on) return;
+  if (!S.notif.on || SUB) return;
   const now = new Date(), today = ymd(now), nowMin = now.getHours() * 60 + now.getMinutes(), n = curDay();
   reminders().forEach(r => {
     const key = today + '|' + r.k, m = toMin(r.at);
@@ -398,16 +402,73 @@ function tick() {
   Object.keys(S.fired).forEach(k => { if (!k.startsWith(today)) delete S.fired[k]; });
   save();
 }
+function b64ToU8(s) {
+  const pad = '='.repeat((4 - s.length % 4) % 4);
+  const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+async function apiPost(body) {
+  try {
+    const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+let syncTimer = null;
+function scheduleSync() {
+  if (!SUB) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncNow, 800);
+}
+function syncNow() {
+  if (!SUB) return Promise.resolve(false);
+  return apiPost({
+    action: 'subscribe',
+    subscription: SUB.toJSON(),
+    tzOffset: -new Date().getTimezoneOffset(),
+    start: S.start,
+    times: S.notif.times,
+    done: S.days
+  });
+}
+async function restoreSub() {
+  if (!S.notif.on || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    SUB = await reg.pushManager.getSubscription();
+    if (SUB) syncNow();
+  } catch (e) { /* ignore: user can re-enable */ }
+}
 async function toggleNotif() {
-  if (S.notif.on) { S.notif.on = false; save(); renderSettings(); toast('تم إيقاف الإشعارات'); return; }
+  if (S.notif.on) {
+    S.notif.on = false; save();
+    if (SUB) {
+      await apiPost({ action: 'unsubscribe', subscription: SUB.toJSON() });
+      try { await SUB.unsubscribe(); } catch (e) { /* already gone */ }
+      SUB = null;
+    }
+    renderSettings(); toast('تم إيقاف الإشعارات'); return;
+  }
   if (!('Notification' in window)) { toast('هذا المتصفح لا يدعم الإشعارات. افتح الرابط من Chrome أو Safari.'); return; }
   let p = Notification.permission;
   if (p === 'default') { try { p = await Notification.requestPermission(); } catch (e) { p = 'denied'; } }
   if (p !== 'granted') { toast('الإشعارات محظورة. فعّلها من إعدادات الموقع في المتصفح.'); renderSettings(); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    SUB = (await reg.pushManager.getSubscription()) ||
+      (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) }));
+  } catch (e) {
+    toast('تعذّر الاشتراك في الإشعارات على هذا المتصفح.'); renderSettings(); return;
+  }
   const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes(), today = ymd(now);
   reminders().forEach(r => { if (toMin(r.at) <= nowMin) S.fired[today + '|' + r.k] = true; });
-  S.notif.on = true; save(); renderSettings(); tick();
-  toast('تم تفعيل الإشعارات');
+  S.notif.on = true; save(); renderSettings();
+  const ok = await syncNow();
+  toast(ok ? 'تم تفعيل الإشعارات' : 'فعّلت الإشعارات، لكن تعذّر تسجيلها على الخادم. حاول مرة ثانية.');
+}
+async function testPush() {
+  if (!SUB) { notify('اختبار الإشعارات', 'الإشعارات تعمل على هذا الجهاز.'); return; }
+  const ok = await apiPost({ action: 'test', subscription: SUB.toJSON() });
+  toast(ok ? 'أُرسل إشعار تجريبي من الخادم' : 'تعذّر إرسال الإشعار التجريبي');
 }
 
 /* ---------- events ---------- */
@@ -434,7 +495,7 @@ document.getElementById('app').addEventListener('click', e => {
   else if (act === 'water') { const st = dayState(VIEW); const i = Number(el.dataset.i); st.water[i] = !st.water[i]; save(); renderAll(); }
   else if (act === 'shop') { const i = Number(el.dataset.i); S.shop[i] = !S.shop[i]; save(); renderAll(); }
   else if (act === 'notif') { toggleNotif(); }
-  else if (act === 'test') { notify('اختبار الإشعارات', 'الإشعارات تعمل على هذا الجهاز.'); }
+  else if (act === 'test') { testPush(); }
   else if (act === 'reset') {
     if (!resetArmed) { resetArmed = true; renderSettings(); setTimeout(() => { if (resetArmed) { resetArmed = false; renderSettings(); } }, 4000); return; }
     resetArmed = false;
@@ -467,6 +528,7 @@ if ('serviceWorker' in navigator) {
 
 renderAll();
 showTab('today');
+restoreSub();
 tick();
 setInterval(tick, 30000);
 </script>
