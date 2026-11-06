@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E6B58">
+<meta name="description" content="خطة 30 يوماً: وجبات وماء وتمارين ونوم ووزن مع تذكيرات.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="خطة 30">
+<title>خطة 30 يوماً</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: one column phone app. Header, a day-focused panel, and a fixed bottom tab bar.
+   Palette: warm paper, deep green accent, clay warning. Type: Tajawal throughout (Arabic + Latin digits). */
+:root {
+  color-scheme: light;
+  --bg: #F4F2EC; --surface: #FFFFFF; --fg: #1B2220; --muted: #667069;
+  --line: #E0DCD2; --accent: #1E6B58; --accent-ink: #FFFFFF; --accent-soft: #DDEDE6;
+  --warn: #A8512A; --warn-soft: #F6E4D9;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101513; --surface: #18201C; --fg: #E7ECE8; --muted: #97A29B;
+    --line: #2B3630; --accent: #5DBE9E; --accent-ink: #0E1512; --accent-soft: #213A31;
+    --warn: #E6906A; --warn-soft: #3A2A22; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101513; --surface: #18201C; --fg: #E7ECE8; --muted: #97A29B;
+  --line: #2B3630; --accent: #5DBE9E; --accent-ink: #0E1512; --accent-soft: #213A31;
+  --warn: #E6906A; --warn-soft: #3A2A22; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 Tajawal, system-ui, sans-serif; }
+button, input { font: inherit; color: inherit; }
+#app { padding-block: max(18px, env(safe-area-inset-top, 0px)) max(110px, env(safe-area-inset-bottom, 0px) + 92px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 620px; margin: 0 auto; }
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+.eyebrow { margin: 0; color: var(--muted); font-size: 14px; }
+h1 { margin: 2px 0 0; font-size: 26px; font-weight: 900; line-height: 1.2; text-wrap: balance; }
+h2 { font-size: 18px; margin: 0 0 4px; font-weight: 700; }
+.pill { white-space: nowrap; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 12px; min-width: 0; }
+.muted { color: var(--muted); font-size: 14px; }
+.small { font-size: 13px; color: var(--muted); }
+.warn { background: var(--warn-soft); color: var(--warn); border-radius: 12px; padding: 12px 14px; font-size: 14px; margin-bottom: 12px; }
+.daynav { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.daynav b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; cursor: pointer; min-height: 44px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn:focus-visible, input:focus-visible, .tabbar button:focus-visible, .slot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.check:first-of-type { border-top: 0; }
+.check input { width: 22px; height: 22px; margin-top: 3px; accent-color: var(--accent); flex: none; }
+.check span { display: flex; flex-direction: column; min-width: 0; }
+.check b { font-weight: 700; }
+.check small { color: var(--muted); font-size: 14px; }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.slot { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 8px 4px; cursor: pointer; text-align: center; min-height: 64px; }
+.slot b { display: block; font-variant-numeric: tabular-nums; }
+.slot small { color: var(--muted); font-size: 12px; }
+.slot.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.slot.on small { color: var(--accent-ink); opacity: .85; }
+.bar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s; }
+.moves { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.moves li { background: var(--bg); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.moves span { font-size: 14px; }
+.moves small { color: var(--muted); font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.cell { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); display: grid; place-items: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; cursor: pointer; color: var(--fg); padding: 0; }
+.cell.part { background: var(--accent-soft); color: var(--accent); }
+.cell.full { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.cell.future { opacity: .45; }
+.cell.cur { outline: 2px solid var(--warn); outline-offset: 2px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; min-width: 0; }
+.stat b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat small { color: var(--muted); font-size: 12px; }
+.wrow { display: grid; grid-template-columns: 64px 1fr 1fr; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+.wrow span { font-size: 14px; }
+input[type=number], input[type=time], input[type=date] { width: 100%; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font-variant-numeric: tabular-nums; }
+.wrap-svg { width: 100%; overflow-x: auto; }
+svg text { font-family: Tajawal, system-ui, sans-serif; font-size: 12px; }
+.shop-sec { margin-top: 10px; }
+.shop-sec h3 { font-size: 14px; color: var(--muted); margin: 14px 0 0; font-weight: 700; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); padding-block: 6px; z-index: 5; }
+.tabbar button { background: none; border: 0; padding: 8px 2px; border-radius: 10px; cursor: pointer; color: var(--muted); font-size: 13px; min-height: 48px; }
+.tabbar button[aria-current="page"] { color: var(--accent); font-weight: 900; background: var(--accent-soft); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px); z-index: 9; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.panel[hidden] { display: none !important; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <p class="eyebrow" id="dateLine"></p>
+      <h1>خطة 30 يوماً</h1>
+      <p class="muted" style="margin:2px 0 0">نزول الدهون والمحافظة على العضلات</p>
+    </div>
+    <span class="pill" id="curPill"></span>
+  </header>
+
+  <!-- اليوم -->
+  <section class="panel" id="tab-today" aria-label="اليوم"></section>
+
+  <!-- التقدم -->
+  <section class="panel" id="tab-progress" aria-label="التقدم" hidden></section>
+
+  <!-- التمارين -->
+  <section class="panel" id="tab-ex" aria-label="التمارين" hidden></section>
+
+  <!-- المشتريات -->
+  <section class="panel" id="tab-shop" aria-label="المشتريات" hidden></section>
+
+  <!-- الإعدادات -->
+  <section class="panel" id="tab-settings" aria-label="الإعدادات" hidden></section>
+
+  <nav class="tabbar" aria-label="التنقل">
+    <button data-tab="today" aria-current="page">اليوم</button>
+    <button data-tab="progress">التقدم</button>
+    <button data-tab="ex">التمارين</button>
+    <button data-tab="shop">المشتريات</button>
+    <button data-tab="settings">الإعدادات</button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<script>
+const D = {"days": [{"n": 1, "lunch": "صدر دجاج مشوي 220غ + أرز مطبوخ 180غ + سلطة 250غ + زيت زيتون 10غ + زبادي يوناني/عالي البروتين 170غ", "dinner": "سمك أبيض مشوي 250غ + بطاطس بالفرن 250غ + خضار 250غ + زيت زيتون 10غ + تفاحة", "snack": "سناك اختياري عند الحاجة: موزة صغيرة + زبادي عالي البروتين 150غ (احسبه ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "مشي 25 دقيقة بوتيرة مريحة | 5,000–6,000 خطوة كبداية", "sleep": "7–9 ساعات"}, {"n": 2, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 170غ + سلطة 250غ + زبادي 170غ", "dinner": "تونة بالماء مصفاة 160غ + خبز أسمر 100غ + حمص 60غ + سلطة 250غ + برتقالة", "snack": "سناك اختياري: تفاحة + 20غ لوز (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "قوة A 20–25 دقيقة + مشي 10 دقيقة | 5,000–6,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 3, "lunch": "سمك سلمون 200غ + بطاطس 250غ + خضار 250غ", "dinner": "صدر دجاج 220غ + برغل مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "snack": "سناك اختياري: زبادي عالي البروتين 170غ + توت/فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "مشي 25 دقيقة بوتيرة مريحة | 5,000–6,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 4, "lunch": "دجاج 220غ + أرز مطبوخ 180غ + خضار 250غ + زيت زيتون 10غ", "dinner": "لحم بقري قليل الدهن 180غ + بطاطا حلوة 250غ + سلطة 250غ + لبن/زبادي 170غ", "snack": "سناك اختياري: برتقالة + 20غ مكسرات غير مملحة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "راحة نشطة | 4,500–5,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 5, "lunch": "روبيان 250غ + أرز مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "dinner": "لحم ضأن منزوع الدهن 180غ + بطاطس 220غ + خضار 250غ", "snack": "سناك اختياري: حليب/لبن 250مل + ثمرة فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "قوة B 20–25 دقيقة + مشي 10 دقيقة | 5,000–6,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 6, "lunch": "دجاج 220غ + خبز عربي أسمر 100غ + سلطة 250غ + لبن 200مل", "dinner": "سمك مشوي 250غ + أرز مطبوخ 150غ + خضار 250غ + فاكهة", "snack": "سناك اختياري: زبادي 170غ (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "مشي 25 دقيقة بوتيرة مريحة | 6,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 7, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 160غ + سلطة 250غ", "dinner": "عدس مطبوخ 200غ + تونة مصفاة 120غ + زبادي 170غ + سلطة 200غ + خبز أسمر 60غ", "snack": "سناك اختياري: فاكهة واحدة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5 لتر", "exercise": "راحة | 4,500–5,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 8, "lunch": "صدر دجاج مشوي 220غ + أرز مطبوخ 180غ + سلطة 250غ + زيت زيتون 10غ + زبادي يوناني/عالي البروتين 170غ", "dinner": "سمك أبيض مشوي 250غ + بطاطس بالفرن 250غ + خضار 250غ + زيت زيتون 10غ + تفاحة", "snack": "سناك اختياري عند الحاجة: موزة صغيرة + زبادي عالي البروتين 150غ (احسبه ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "مشي 30 دقيقة بوتيرة مريحة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 9, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 170غ + سلطة 250غ + زبادي 170غ", "dinner": "تونة بالماء مصفاة 160غ + خبز أسمر 100غ + حمص 60غ + سلطة 250غ + برتقالة", "snack": "سناك اختياري: تفاحة + 20غ لوز (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "قوة A 20–25 دقيقة + مشي 12 دقيقة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 10, "lunch": "سمك سلمون 200غ + بطاطس 250غ + خضار 250غ", "dinner": "صدر دجاج 220غ + برغل مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "snack": "سناك اختياري: زبادي عالي البروتين 170غ + توت/فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "مشي 30 دقيقة بوتيرة مريحة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 11, "lunch": "دجاج 220غ + أرز مطبوخ 180غ + خضار 250غ + زيت زيتون 10غ", "dinner": "لحم بقري قليل الدهن 180غ + بطاطا حلوة 250غ + سلطة 250غ + لبن/زبادي 170غ", "snack": "سناك اختياري: برتقالة + 20غ مكسرات غير مملحة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "راحة نشطة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 12, "lunch": "روبيان 250غ + أرز مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "dinner": "لحم ضأن منزوع الدهن 180غ + بطاطس 220غ + خضار 250غ", "snack": "سناك اختياري: حليب/لبن 250مل + ثمرة فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "قوة B 20–25 دقيقة + مشي 12 دقيقة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 13, "lunch": "دجاج 220غ + خبز عربي أسمر 100غ + سلطة 250غ + لبن 200مل", "dinner": "سمك مشوي 250غ + أرز مطبوخ 150غ + خضار 250غ + فاكهة", "snack": "سناك اختياري: زبادي 170غ (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "مشي 30 دقيقة بوتيرة مريحة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 14, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 160غ + سلطة 250غ", "dinner": "عدس مطبوخ 200غ + تونة مصفاة 120غ + زبادي 170غ + سلطة 200غ + خبز أسمر 60غ", "snack": "سناك اختياري: فاكهة واحدة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–2.7 لتر", "exercise": "راحة | 6,000–7,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 15, "lunch": "صدر دجاج مشوي 220غ + أرز مطبوخ 180غ + سلطة 250غ + زيت زيتون 10غ + زبادي يوناني/عالي البروتين 170غ", "dinner": "سمك أبيض مشوي 250غ + بطاطس بالفرن 250غ + خضار 250غ + زيت زيتون 10غ + تفاحة", "snack": "سناك اختياري عند الحاجة: موزة صغيرة + زبادي عالي البروتين 150غ (احسبه ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 35 دقيقة بوتيرة مريحة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 16, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 170غ + سلطة 250غ + زبادي 170غ", "dinner": "تونة بالماء مصفاة 160غ + خبز أسمر 100غ + حمص 60غ + سلطة 250غ + برتقالة", "snack": "سناك اختياري: تفاحة + 20غ لوز (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "قوة A 20–25 دقيقة + مشي 15 دقيقة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 17, "lunch": "سمك سلمون 200غ + بطاطس 250غ + خضار 250غ", "dinner": "صدر دجاج 220غ + برغل مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "snack": "سناك اختياري: زبادي عالي البروتين 170غ + توت/فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 35 دقيقة بوتيرة مريحة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 18, "lunch": "دجاج 220غ + أرز مطبوخ 180غ + خضار 250غ + زيت زيتون 10غ", "dinner": "لحم بقري قليل الدهن 180غ + بطاطا حلوة 250غ + سلطة 250غ + لبن/زبادي 170غ", "snack": "سناك اختياري: برتقالة + 20غ مكسرات غير مملحة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "راحة نشطة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 19, "lunch": "روبيان 250غ + أرز مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "dinner": "لحم ضأن منزوع الدهن 180غ + بطاطس 220غ + خضار 250غ", "snack": "سناك اختياري: حليب/لبن 250مل + ثمرة فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "قوة B 20–25 دقيقة + مشي 15 دقيقة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 20, "lunch": "دجاج 220غ + خبز عربي أسمر 100غ + سلطة 250غ + لبن 200مل", "dinner": "سمك مشوي 250غ + أرز مطبوخ 150غ + خضار 250غ + فاكهة", "snack": "سناك اختياري: زبادي 170غ (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 35 دقيقة بوتيرة مريحة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 21, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 160غ + سلطة 250غ", "dinner": "عدس مطبوخ 200غ + تونة مصفاة 120غ + زبادي 170غ + سلطة 200غ + خبز أسمر 60غ", "snack": "سناك اختياري: فاكهة واحدة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "راحة | 6,500–7,500 خطوة", "sleep": "7–9 ساعات"}, {"n": 22, "lunch": "صدر دجاج مشوي 220غ + أرز مطبوخ 180غ + سلطة 250غ + زيت زيتون 10غ + زبادي يوناني/عالي البروتين 170غ", "dinner": "سمك أبيض مشوي 250غ + بطاطس بالفرن 250غ + خضار 250غ + زيت زيتون 10غ + تفاحة", "snack": "سناك اختياري عند الحاجة: موزة صغيرة + زبادي عالي البروتين 150غ (احسبه ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 40 دقيقة بوتيرة مريحة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 23, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 170غ + سلطة 250غ + زبادي 170غ", "dinner": "تونة بالماء مصفاة 160غ + خبز أسمر 100غ + حمص 60غ + سلطة 250غ + برتقالة", "snack": "سناك اختياري: تفاحة + 20غ لوز (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "قوة A 20–25 دقيقة + مشي 15 دقيقة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 24, "lunch": "سمك سلمون 200غ + بطاطس 250غ + خضار 250غ", "dinner": "صدر دجاج 220غ + برغل مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "snack": "سناك اختياري: زبادي عالي البروتين 170غ + توت/فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 40 دقيقة بوتيرة مريحة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 25, "lunch": "دجاج 220غ + أرز مطبوخ 180غ + خضار 250غ + زيت زيتون 10غ", "dinner": "لحم بقري قليل الدهن 180غ + بطاطا حلوة 250غ + سلطة 250غ + لبن/زبادي 170غ", "snack": "سناك اختياري: برتقالة + 20غ مكسرات غير مملحة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "راحة نشطة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 26, "lunch": "روبيان 250غ + أرز مطبوخ 180غ + سلطة 250غ + زبادي 170غ", "dinner": "لحم ضأن منزوع الدهن 180غ + بطاطس 220غ + خضار 250غ", "snack": "سناك اختياري: حليب/لبن 250مل + ثمرة فاكهة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "قوة B 20–25 دقيقة + مشي 15 دقيقة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 27, "lunch": "دجاج 220غ + خبز عربي أسمر 100غ + سلطة 250غ + لبن 200مل", "dinner": "سمك مشوي 250غ + أرز مطبوخ 150غ + خضار 250غ + فاكهة", "snack": "سناك اختياري: زبادي 170غ (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 40 دقيقة بوتيرة مريحة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 28, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 160غ + سلطة 250غ", "dinner": "عدس مطبوخ 200غ + تونة مصفاة 120غ + زبادي 170غ + سلطة 200غ + خبز أسمر 60غ", "snack": "سناك اختياري: فاكهة واحدة (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "راحة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 29, "lunch": "صدر دجاج مشوي 220غ + أرز مطبوخ 180غ + سلطة 250غ + زيت زيتون 10غ + زبادي يوناني/عالي البروتين 170غ", "dinner": "سمك أبيض مشوي 250غ + بطاطس بالفرن 250غ + خضار 250غ + زيت زيتون 10غ + تفاحة", "snack": "سناك اختياري عند الحاجة: موزة صغيرة + زبادي عالي البروتين 150غ (احسبه ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "مشي 40 دقيقة بوتيرة مريحة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}, {"n": 30, "lunch": "لحم بقري قليل الدهن 200غ + أرز مطبوخ 170غ + سلطة 250غ + زبادي 170غ", "dinner": "تونة بالماء مصفاة 160غ + خبز أسمر 100غ + حمص 60غ + سلطة 250غ + برتقالة", "snack": "سناك اختياري: تفاحة + 20غ لوز (ضمن إجمالي اليوم).", "kcal": "1,850–1,950", "water": "2.5–3 لتر", "exercise": "قوة A 20–25 دقيقة + مشي 15 دقيقة | 7,000–8,000 خطوة", "sleep": "7–9 ساعات"}], "ex": [{"prog": "قوة A", "name": "الجلوس والوقوف من كرسي", "dose": "2 مجموعات × 8–12 تكرار؛ كرسي ثابت ومدى مريح", "note": "توقف إذا ظهر ألم حاد بالركبة أو الظهر."}, {"prog": "قوة A", "name": "ضغط الحائط", "dose": "2 × 8–12 تكرار", "note": "الجسم مستقيم، لا تحبس النفس."}, {"prog": "قوة A", "name": "سحب مطاط مقاومة جالس/واقف", "dose": "2 × 10–12 تكرار", "note": "اسحب المرفقين للخلف بتحكم."}, {"prog": "قوة A", "name": "جسر الحوض", "dose": "2 × 10–12 تكرار", "note": "على سطح ثابت، بدون ألم."}, {"prog": "قوة B", "name": "رفع الكعبين", "dose": "2 × 12–15 تكرار", "note": "تمسك بكرسي للتوازن."}, {"prog": "قوة B", "name": "Hip hinge / انحناء الورك", "dose": "2 × 10 تكرار بدون وزن أو بحمل خفيف", "note": "ظهر محايد وحركة من الورك."}, {"prog": "قوة B", "name": "ضغط كتف بمطاط خفيف أو زجاجات ماء", "dose": "2 × 8–10 تكرار", "note": "خفف المدى إذا شعرت بانزعاج."}, {"prog": "قوة B", "name": "Bird-dog", "dose": "2 × 8 لكل جهة", "note": "حركة بطيئة مع ثبات الجذع."}, {"prog": "كل الأيام", "name": "إحماء", "dose": "5 دقائق مشي في المكان وتحريك المفاصل بلطف", "note": "لا تبدأ التمرين بقوة."}, {"prog": "كل الأيام", "name": "تهدئة", "dose": "3–5 دقائق مشي بطيء وتنفس", "note": "لا تستخدم التمطط المؤلم."}], "shop": [{"sec": "بروتين", "item": "دجاج منزوع الجلد", "qty": "1.2–1.5 كجم نيئ تقريباً"}, {"sec": "بروتين", "item": "سمك أبيض/سلمون/روبيان", "qty": "1.2–1.5 كجم إجمالاً"}, {"sec": "بروتين", "item": "لحم بقري قليل الدهن/ضأن", "qty": "0.8–1.0 كجم"}, {"sec": "بروتين", "item": "تونة بالماء", "qty": "2 علبة حسب الوزن المصفى"}, {"sec": "ألبان", "item": "زبادي طبيعي/عالي البروتين", "qty": "5–7 عبوات"}, {"sec": "نشويات", "item": "أرز", "qty": "0.6–0.8 كجم جاف تقريباً"}, {"sec": "نشويات", "item": "بطاطس/بطاطا حلوة", "qty": "1.5–2 كجم"}, {"sec": "نشويات", "item": "برغل/خبز أسمر", "qty": "حسب أيام الجدول"}, {"sec": "خضار", "item": "خضروات وسلطة متنوعة", "qty": "3–4 كجم"}, {"sec": "فواكه", "item": "تفاح/موز/برتقال/فاكهة موسمية", "qty": "7–10 حصص"}, {"sec": "دهون", "item": "زيت زيتون ومكسرات غير مملحة", "qty": "عبوة صغيرة ومقدار أسبوعي مضبوط"}, {"sec": "بقوليات", "item": "عدس/حمص", "qty": "عبوة صغيرة"}]};
+const WATER = [
+  { l: 'بعد الاستيقاظ', ml: 300 }, { l: 'مع الظهر', ml: 500 }, { l: 'بعد الظهر', ml: 500 },
+  { l: 'حول التمرين', ml: 500 }, { l: 'مع العشاء', ml: 500 }, { l: 'المساء', ml: 250 }
+];
+const TARGET_ML = 2500;
+const WATER_HOURS = [9, 11, 13, 15, 17, 19, 21];
+const WEEKS = [
+  'الأسبوع 1: مجموعتان خفيفتان، والمشي 25–30 دقيقة حسب القدرة.',
+  'الأسبوع 2: زد المشي 5 دقائق في الجلسة إذا كان التعافي جيداً.',
+  'الأسبوع 3: استمر على مجموعتين، وأضف تكرارين فقط إذا كانت الحركة سهلة.',
+  'الأسبوع 4: حافظ على الروتين، ولا ترفع الشدة لمجرد اقتراب نهاية الشهر.'
+];
+const KEY = 'plan30-v1';
+
+/* ---------- storage (per-browser; every access guarded) ---------- */
+function ymd(d) { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function parseYmd(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+function load() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { s = {}; }
+  return Object.assign({ start: ymd(new Date()), days: {}, weights: {}, shop: {}, fired: {}, notif: { on: false, times: { weigh: '07:00', lunch: '12:00', ex: '18:00', dinner: '19:00', log: '21:30' } } }, s);
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: keep working in memory */ } }
+let S = load();
+
+/* ---------- helpers ---------- */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function curDay() {
+  const n = Math.round((parseYmd(ymd(new Date())) - parseYmd(S.start)) / 86400000) + 1;
+  return Math.min(30, Math.max(1, n));
+}
+let VIEW = curDay();
+let TAB = 'today';
+let resetArmed = false;
+function dayState(n) {
+  if (!S.days[n]) S.days[n] = { lunch: false, dinner: false, snack: false, ex: false, sleep: false, water: [false, false, false, false, false, false] };
+  return S.days[n];
+}
+function isFull(n) { const d = S.days[n]; return !!(d && d.lunch && d.dinner && d.ex); }
+function isPart(n) { const d = S.days[n]; return !!d && (d.lunch || d.dinner || d.ex || d.sleep || d.water.some(Boolean)); }
+function exType(t) { if (/قوة A/.test(t)) return 'A'; if (/قوة B/.test(t)) return 'B'; if (/راحة/.test(t)) return 'rest'; return 'walk'; }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 3800);
+}
+
+/* ---------- renders ---------- */
+function renderHeader() {
+  document.getElementById('dateLine').textContent = new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('curPill').textContent = 'اليوم ' + curDay() + ' من 30';
+}
+
+function renderToday() {
+  const d = D.days[VIEW - 1];
+  const st = dayState(VIEW);
+  const type = exType(d.exercise);
+  let moves = '';
+  if (type === 'A' || type === 'B') {
+    const items = D.ex.filter(e => e.prog === 'قوة ' + type);
+    const common = D.ex.filter(e => e.prog === 'كل الأيام');
+    moves = `<ul class="moves">${items.map(e => `<li><b>${esc(e.name)}</b><span>${esc(e.dose)}</span><small>${esc(e.note)}</small></li>`).join('')}</ul>
+      <p class="small" style="margin:8px 0 0">${common.map(e => esc(e.name) + ': ' + esc(e.dose)).join(' · ')}</p>`;
+  }
+  const total = st.water.reduce((a, on, i) => a + (on ? WATER[i].ml : 0), 0);
+  const pct = Math.min(100, Math.round(total / TARGET_ML * 100));
+  const slots = WATER.map((w, i) => `<button class="slot ${st.water[i] ? 'on' : ''}" data-act="water" data-i="${i}" aria-pressed="${st.water[i]}"><b>${w.ml} مل</b><small>${w.l}</small></button>`).join('');
+  const el = document.getElementById('tab-today');
+  el.innerHTML = `
+    <div class="daynav">
+      <button class="btn" data-act="nav" data-d="-1" ${VIEW <= 1 ? 'disabled' : ''}>السابق</button>
+      <div style="text-align:center"><b>اليوم ${VIEW}</b><div class="small">${VIEW === curDay() ? 'اليوم الحالي' : 'يوم من الخطة'}</div></div>
+      <button class="btn" data-act="nav" data-d="1" ${VIEW >= 30 ? 'disabled' : ''}>التالي</button>
+    </div>
+    ${VIEW === curDay() ? '' : '<p style="margin:-4px 0 12px"><button class="btn" data-act="today">العودة لليوم الحالي</button></p>'}
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>الوجبات</h2><span class="small">السعرات: ${esc(d.kcal)}</span></div>
+      <label class="check"><input type="checkbox" data-act="flag" data-f="lunch" ${st.lunch ? 'checked' : ''}><span><b>وجبة الظهر (12–2)</b><small>${esc(d.lunch)}</small></span></label>
+      <label class="check"><input type="checkbox" data-act="flag" data-f="dinner" ${st.dinner ? 'checked' : ''}><span><b>وجبة المساء (7–9)</b><small>${esc(d.dinner)}</small></span></label>
+      <label class="check"><input type="checkbox" data-act="flag" data-f="snack" ${st.snack ? 'checked' : ''}><span><b>سناك اختياري</b><small>${esc(d.snack)}</small></span></label>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>الماء</h2><span class="small">الخطة: ${esc(d.water)}</span></div>
+      <div class="slots">${slots}</div>
+      <div class="row" style="justify-content:space-between"><span class="small">${total} مل من ${TARGET_ML} مل تقريباً</span><span class="small">${pct}%</span></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>التمرين</h2><span class="small">الخطوات: ${esc(d.exercise.split('|').pop().trim())}</span></div>
+      <p style="margin:4px 0 0">${esc(d.exercise.split('|')[0].trim())}</p>
+      ${moves}
+      <label class="check"><input type="checkbox" data-act="flag" data-f="ex" ${st.ex ? 'checked' : ''}><span><b>تم التمرين</b><small>إحماء 5 دقائق وتهدئة 3–5 دقائق. توقف عند الألم الحاد.</small></span></label>
+    </div>
+
+    <div class="card">
+      <h2>النوم</h2>
+      <p class="muted" style="margin:0 0 4px">الهدف: ${esc(d.sleep)}</p>
+      <label class="check"><input type="checkbox" data-act="flag" data-f="sleep" ${st.sleep ? 'checked' : ''}><span><b>نمت الليلة الهدف</b></span></label>
+    </div>
+    <p class="small">السعرات والبروتين تقديرية. الوجبات قابلة للتبديل بين الأيام مع الحفاظ على الكميات. لا تقلل السعرات أكثر لتعويض يوم فائت.</p>`;
+}
+
+function chartSvg() {
+  const pts = Object.entries(S.weights).filter(([, v]) => v && v.w).map(([n, v]) => [+n, +v.w]).sort((a, b) => a[0] - b[0]);
+  if (pts.length < 2) return '<p class="muted">سجّل وزنك في يومين على الأقل لتظهر الخريطة.</p>';
+  const W = 320, H = 180, P = 30;
+  const vals = pts.map(p => p[1]).concat([100]);
+  const min = Math.min(...vals) - 1, max = Math.max(...vals) + 1;
+  const x = n => P + (n - 1) / 29 * (W - 2 * P);
+  const y = w => P + (max - w) / (max - min) * (H - 2 * P);
+  const path = pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join(' ');
+  const dots = pts.map(p => `<circle cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="3.5" style="fill:var(--accent)"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="منحنى الوزن">
+    <line x1="${P}" x2="${W - P}" y1="${y(100)}" y2="${y(100)}" style="stroke:var(--warn)" stroke-dasharray="4 4"/>
+    <text x="${W - P}" y="${y(100) - 5}" text-anchor="end" style="fill:var(--warn)">100 كجم</text>
+    <path d="${path}" fill="none" style="stroke:var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${dots}
+    <text x="${P}" y="${H - 6}" style="fill:var(--muted)">يوم 1</text>
+    <text x="${W - P}" y="${H - 6}" text-anchor="end" style="fill:var(--muted)">يوم 30</text>
+    <text x="4" y="${P}" style="fill:var(--muted)">${max.toFixed(0)}</text>
+    <text x="4" y="${H - P}" style="fill:var(--muted)">${min.toFixed(0)}</text>
+  </svg>`;
+}
+
+function renderProgress() {
+  const cur = curDay();
+  let done = 0, water = [], s = 0;
+  for (let n = 1; n <= 30; n++) { if (isFull(n)) done++; const d = S.days[n]; if (d && d.water.some(Boolean)) water.push(d.water.reduce((a, on, i) => a + (on ? WATER[i].ml : 0), 0)); }
+  let k = cur; if (!isFull(k)) k--;
+  while (k >= 1 && isFull(k)) { s++; k--; }
+  const avgW = water.length ? Math.round(water.reduce((a, b) => a + b, 0) / water.length) : 0;
+  const cells = Array.from({ length: 30 }, (_, i) => {
+    const n = i + 1;
+    const cls = [isFull(n) ? 'full' : isPart(n) ? 'part' : '', n > cur ? 'future' : '', n === cur ? 'cur' : ''].join(' ');
+    return `<button class="cell ${cls}" data-act="goto" data-n="${n}" aria-label="اليوم ${n}">${n}</button>`;
+  }).join('');
+  const ws = Object.entries(S.weights).filter(([, v]) => v && v.w).sort((a, b) => a[0] - b[0]);
+  const delta = ws.length >= 2 ? (+ws[ws.length - 1][1].w - +ws[0][1].w).toFixed(1) : null;
+  const rows = Array.from({ length: 30 }, (_, i) => {
+    const n = i + 1, v = S.weights[n] || {};
+    return `<div class="wrow"><span>يوم ${n}</span>
+      <input type="number" inputmode="decimal" step="0.1" placeholder="الوزن" aria-label="وزن يوم ${n}" data-field="w" data-n="${n}" value="${v.w || ''}">
+      <input type="number" inputmode="decimal" step="0.5" placeholder="الخصر سم" aria-label="الخصر يوم ${n}" data-field="waist" data-n="${n}" value="${v.waist || ''}"></div>`;
+  }).join('');
+  document.getElementById('tab-progress').innerHTML = `
+    <div class="stats">
+      <div class="stat"><b>${done}</b><small>أيام مكتملة من 30</small></div>
+      <div class="stat"><b>${s}</b><small>سلسلة متتالية</small></div>
+      <div class="stat"><b>${avgW}</b><small>متوسط الماء (مل)</small></div>
+    </div>
+    <div class="card"><h2>الدهون والعضلات</h2>
+      <p class="muted" style="margin:0 0 8px">${ws.length ? 'آخر وزن: ' + ws[ws.length - 1][1].w + ' كجم' + (delta !== null ? ' · التغيّر منذ البداية: ' + delta + ' كجم' : '') : 'لم تسجّل وزناً بعد.'}</p>
+      <div class="wrap-svg">${chartSvg()}</div>
+      <p class="small" style="margin:8px 0 0">الوزن الأفضل قياسه صباحاً بعد الحمام، 2–3 مرات أسبوعياً، ومقارنة المتوسط لا قراءة يوم واحد.</p>
+    </div>
+    <div class="card"><h2>خريطة الأيام</h2>
+      <p class="small" style="margin:0 0 10px">مكتمل = وجبة الظهر والمساء والتمرين. اضغط أي يوم لفتحه.</p>
+      <div class="grid">${cells}</div>
+    </div>
+    <div class="card"><h2>سجل الوزن والخصر</h2>
+      <div class="wrow" style="border-top:0;font-size:13px;color:var(--muted)"><span></span><span>الوزن كجم</span><span>الخصر سم</span></div>
+      ${rows}
+    </div>`;
+}
+
+function renderEx() {
+  const groups = ['قوة A', 'قوة B', 'كل الأيام'];
+  const html = groups.map(g => `<div class="card"><h2>${esc(g)}</h2><ul class="moves" style="margin-top:8px">
+    ${D.ex.filter(e => e.prog === g).map(e => `<li><b>${esc(e.name)}</b><span>${esc(e.dose)}</span><small>${esc(e.note)}</small></li>`).join('')}
+  </ul></div>`).join('');
+  document.getElementById('tab-ex').innerHTML = `
+    <div class="warn">إذا ظهر ألم مفصلي أو دوخة أو ضيق نفس أو خفقان غير معتاد، أوقف الحركة واطلب تقييماً طبياً. لا توجد تمارين قفز أو جري في هذه الخطة.</div>
+    ${html}
+    <div class="card"><h2>التدرج الأسبوعي</h2><ul class="moves" style="margin-top:8px">${WEEKS.map(w => `<li><span>${esc(w)}</span></li>`).join('')}</ul></div>`;
+}
+
+function renderShop() {
+  const secs = [...new Set(D.shop.map(s => s.sec))];
+  const total = D.shop.length, got = D.shop.filter((_, i) => S.shop[i]).length;
+  const body = secs.map(sec => `<div class="shop-sec"><h3>${esc(sec)}</h3>${D.shop.map((it, i) => it.sec === sec ? `
+    <label class="check"><input type="checkbox" data-act="shop" data-i="${i}" ${S.shop[i] ? 'checked' : ''}><span><b>${esc(it.item)}</b><small>${esc(it.qty)}</small></span></label>` : '').join('')}</div>`).join('');
+  document.getElementById('tab-shop').innerHTML = `
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>قائمة المشتريات الأسبوعية</h2><span class="small">${got} من ${total}</span></div>
+    <p class="small" style="margin:0">الكميات تقريبية للأسبوع. الأوزان للأرز والبطاطس واللحوم بعد الطبخ ما لم يذكر غير ذلك.</p>
+    ${body}</div>`;
+}
+
+function renderSettings() {
+  const supported = 'Notification' in window;
+  const perm = supported ? Notification.permission : 'unsupported';
+  const permText = { granted: 'مسموحة', denied: 'محظورة من إعدادات المتصفح', default: 'لم تُفعَّل بعد', unsupported: 'غير مدعومة في هذا المتصفح' }[perm];
+  const t = S.notif.times;
+  const timeRow = (k, label) => `<div class="wrow" style="grid-template-columns:1fr 130px"><span style="font-size:15px">${label}</span><input type="time" value="${t[k]}" data-field="time" data-k="${k}" aria-label="${label}"></div>`;
+  document.getElementById('tab-settings').innerHTML = `
+    <div class="card"><h2>بداية الخطة</h2>
+      <p class="muted" style="margin:0 0 8px">اليوم الأول من الخطة. يتحدد اليوم الحالي منه تلقائياً.</p>
+      <input type="date" id="startDate" value="${S.start}" aria-label="تاريخ اليوم الأول">
+    </div>
+    <div class="card"><h2>الإشعارات</h2>
+      <p class="muted" style="margin:0 0 8px">الحالة: ${permText}</p>
+      <div class="row">
+        <button class="btn primary" data-act="notif">${S.notif.on ? 'إيقاف الإشعارات' : 'تفعيل الإشعارات'}</button>
+        <button class="btn" data-act="test">إرسال إشعار تجريبي</button>
+      </div>
+      <p class="small" style="margin:10px 0 0">تذكيرات الماء كل ساعتين من 9 صباحاً حتى 9 مساءً. يمكنك تعديل المواعيد هنا:</p>
+      ${timeRow('weigh', 'تذكير الوزن الصباحي')}
+      ${timeRow('lunch', 'تذكير وجبة الظهر')}
+      ${timeRow('ex', 'تذكير التمرين')}
+      ${timeRow('dinner', 'تذكير وجبة المساء')}
+      ${timeRow('log', 'تذكير تسجيل اليوم')}
+      <p class="small" style="margin:10px 0 0">الإشعارات تعمل عندما يكون الرابط مفتوحاً في المتصفح، أو مثبتاً على الشاشة الرئيسية. على iPhone أضف الصفحة إلى الشاشة الرئيسية من Safari أولاً، ثم فعّل الإشعارات من داخل التطبيق.</p>
+    </div>
+    <div class="card"><h2>البيانات</h2>
+      <p class="small" style="margin:0 0 10px">تُحفظ بياناتك في هذا المتصفح على هذا الجهاز فقط.</p>
+      <button class="btn" data-act="reset">${resetArmed ? 'اضغط مرة أخرى للتأكيد' : 'مسح كل البيانات'}</button>
+    </div>
+    <div class="warn">الهدف المعروض في الخطة (أقل من 100 كجم خلال 30 يوماً) أسرع من المعدل الآمن المعتاد. الخطة لا تضمن الوصول إليه، ولا تشجع التجويع أو التجفيف. إذا كان لديك مرض مزمن أو أعراض، استشر مختصاً قبل الاستمرار.</div>`;
+}
+
+function renderAll() { renderHeader(); renderToday(); renderProgress(); renderEx(); renderShop(); renderSettings(); }
+
+/* ---------- notifications ---------- */
+function reminders() {
+  const t = S.notif.times;
+  const list = [
+    { k: 'weigh', at: t.weigh, title: 'الوزن الصباحي', body: 'سجّل وزنك بعد الحمام وقبل الأكل.' },
+    { k: 'lunch', at: t.lunch, title: 'وجبة الظهر', body: 'حان وقت وجبة الظهر حسب الخطة.', skip: n => dayState(n).lunch },
+    { k: 'ex', at: t.ex, title: 'تمرين اليوم', body: (D.days[curDay() - 1] || {}).exercise || '', skip: n => dayState(n).ex },
+    { k: 'dinner', at: t.dinner, title: 'وجبة المساء', body: 'حان وقت وجبة المساء حسب الخطة.', skip: n => dayState(n).dinner },
+    { k: 'log', at: t.log, title: 'سجّل إنجاز اليوم', body: 'راجع الوجبات والماء والتمرين والنوم.', skip: n => isFull(n) }
+  ];
+  WATER_HOURS.forEach(h => list.push({ k: 'water' + h, at: String(h).padStart(2, '0') + ':00', title: 'اشرب الماء', body: 'كوب ماء الآن (نحو 500 مل).' }));
+  return list;
+}
+function toMin(s) { const [h, m] = s.split(':').map(Number); return h * 60 + m; }
+async function notify(title, body) {
+  toast(title + ' — ' + body);
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const reg = SW_REG || (('serviceWorker' in navigator) ? await navigator.serviceWorker.getRegistration() : null);
+    if (reg && reg.showNotification) { await reg.showNotification(title, { body, tag: title, lang: 'ar', dir: 'rtl' }); return; }
+    new Notification(title, { body, tag: title, lang: 'ar', dir: 'rtl' });
+  } catch (e) {
+    try { new Notification(title, { body }); } catch (_) { /* platform refuses: in-app toast still shown */ }
+  }
+}
+function tick() {
+  if (!S.notif.on) return;
+  const now = new Date(), today = ymd(now), nowMin = now.getHours() * 60 + now.getMinutes(), n = curDay();
+  reminders().forEach(r => {
+    const key = today + '|' + r.k, m = toMin(r.at);
+    if (nowMin < m || S.fired[key]) return;
+    S.fired[key] = true;
+    // Fire only when the time has just passed; reminders from hours ago are dropped quietly.
+    if (nowMin - m <= 30 && !(r.skip && r.skip(n))) notify(r.title, r.body);
+  });
+  Object.keys(S.fired).forEach(k => { if (!k.startsWith(today)) delete S.fired[k]; });
+  save();
+}
+async function toggleNotif() {
+  if (S.notif.on) { S.notif.on = false; save(); renderSettings(); toast('تم إيقاف الإشعارات'); return; }
+  if (!('Notification' in window)) { toast('هذا المتصفح لا يدعم الإشعارات. افتح الرابط من Chrome أو Safari.'); return; }
+  let p = Notification.permission;
+  if (p === 'default') { try { p = await Notification.requestPermission(); } catch (e) { p = 'denied'; } }
+  if (p !== 'granted') { toast('الإشعارات محظورة. فعّلها من إعدادات الموقع في المتصفح.'); renderSettings(); return; }
+  const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes(), today = ymd(now);
+  reminders().forEach(r => { if (toMin(r.at) <= nowMin) S.fired[today + '|' + r.k] = true; });
+  S.notif.on = true; save(); renderSettings(); tick();
+  toast('تم تفعيل الإشعارات');
+}
+
+/* ---------- events ---------- */
+function showTab(t) {
+  TAB = t;
+  ['today', 'progress', 'ex', 'shop', 'settings'].forEach(x => {
+    document.getElementById('tab-' + x).hidden = x !== t;
+  });
+  document.querySelectorAll('.tabbar button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === t ? 'page' : 'false'));
+  if (t === 'today') VIEW = VIEW || curDay();
+  renderAll();
+  window.scrollTo({ top: 0 });
+}
+document.querySelector('.tabbar').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab);
+});
+document.getElementById('app').addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const act = el.dataset.act;
+  if (act === 'nav') { VIEW = Math.min(30, Math.max(1, VIEW + Number(el.dataset.d))); renderAll(); }
+  else if (act === 'today') { VIEW = curDay(); renderAll(); }
+  else if (act === 'goto') { VIEW = Number(el.dataset.n); showTab('today'); }
+  else if (act === 'flag') { const st = dayState(VIEW); const f = el.dataset.f; st[f] = !st[f]; save(); renderAll(); }
+  else if (act === 'water') { const st = dayState(VIEW); const i = Number(el.dataset.i); st.water[i] = !st.water[i]; save(); renderAll(); }
+  else if (act === 'shop') { const i = Number(el.dataset.i); S.shop[i] = !S.shop[i]; save(); renderAll(); }
+  else if (act === 'notif') { toggleNotif(); }
+  else if (act === 'test') { notify('اختبار الإشعارات', 'الإشعارات تعمل على هذا الجهاز.'); }
+  else if (act === 'reset') {
+    if (!resetArmed) { resetArmed = true; renderSettings(); setTimeout(() => { if (resetArmed) { resetArmed = false; renderSettings(); } }, 4000); return; }
+    resetArmed = false;
+    S.days = {}; S.weights = {}; S.shop = {}; S.fired = {};
+    save(); VIEW = curDay(); renderAll(); toast('تم مسح البيانات');
+  }
+});
+document.getElementById('app').addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'startDate') { if (el.value) { S.start = el.value; VIEW = curDay(); save(); renderAll(); } }
+  else if (el.dataset.field === 'w' || el.dataset.field === 'waist') {
+    const n = Number(el.dataset.n);
+    const v = S.weights[n] || {};
+    const val = parseFloat(el.value);
+    if (el.dataset.field === 'w') v.w = isNaN(val) ? undefined : val; else v.waist = isNaN(val) ? undefined : val;
+    if (v.w === undefined && v.waist === undefined) delete S.weights[n]; else S.weights[n] = v;
+    save(); renderProgress();
+  }
+  else if (el.dataset.field === 'time') { S.notif.times[el.dataset.k] = el.value; save(); tick(); }
+});
+
+
+/* ---------- service worker (installable app + notifications) ---------- */
+let SW_REG = null;
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(r => { SW_REG = r; }).catch(() => {});
+  });
+}
+
+renderAll();
+showTab('today');
+tick();
+setInterval(tick, 30000);
+</script>
+</body>
+</html>
