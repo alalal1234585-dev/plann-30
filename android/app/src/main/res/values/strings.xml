@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">خطة 30</string>
+    <string name="code_hint">أدخل رمز الويدجت من إعدادات الموقع (الإعدادات ← رمز الويدجت)</string>
+    <string name="code_field">مثال: K7P2QX</string>
+    <string name="open_plan">حفظ وفتح الخطة</string>
+    <string name="done">تم</string>
+    <string name="refresh">تحديث</string>
+    <string name="widget_desc">مهام اليوم من خطة 30</string>
 </resources>

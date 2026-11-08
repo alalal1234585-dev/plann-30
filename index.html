@@ -160,9 +160,10 @@ function parseYmd(s) { const [y, m, d] = s.split('-').map(Number); return new Da
 function load() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { s = {}; }
-  return Object.assign({ start: ymd(new Date()), days: {}, weights: {}, shop: {}, fired: {}, notif: { on: false, times: { weigh: '07:00', lunch: '12:00', ex: '18:00', dinner: '19:00', log: '21:30' } } }, s);
+  return Object.assign({ start: ymd(new Date()), days: {}, weights: {}, shop: {}, fired: {}, code: null, localUpdated: 0, notif: { on: false, times: { weigh: '07:00', lunch: '12:00', ex: '18:00', dinner: '19:00', log: '21:30' } } }, s);
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: keep working in memory */ } scheduleSync(); }
+function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: keep working in memory */ } }
+function save() { S.localUpdated = Date.now(); saveLocal(); scheduleSync(); scheduleCodeSync(); }
 let S = load();
 
 /* ---------- helpers ---------- */
@@ -335,6 +336,9 @@ function renderSettings() {
   const perm = supported ? Notification.permission : 'unsupported';
   const permText = { granted: 'مسموحة', denied: 'محظورة من إعدادات المتصفح', default: 'لم تُفعَّل بعد', unsupported: 'غير مدعومة في هذا المتصفح' }[perm];
   const t = S.notif.times;
+  const codeCard = S.code
+    ? `<div class="card"><h2>رمز الويدجت</h2><p class="muted" style="margin:0 0 8px">أدخل هذا الرمز في تطبيق الجوال عند أول فتح.</p><p style="font-size:26px;font-weight:900;letter-spacing:.2em;margin:0 0 10px;font-variant-numeric:tabular-nums">${esc(S.code)}</p><div class="row"><button class="btn" data-act="pull">مزامنة الآن</button></div></div>`
+    : `<div class="card"><h2>رمز الويدجت</h2><p class="muted" style="margin:0 0 8px">أنشئ رمزاً لربط الويدجت بهذه الخطة.</p><button class="btn primary" data-act="gencode">إنشاء الرمز</button></div>`;
   const timeRow = (k, label) => `<div class="wrow" style="grid-template-columns:1fr 130px"><span style="font-size:15px">${label}</span><input type="time" value="${t[k]}" data-field="time" data-k="${k}" aria-label="${label}"></div>`;
   document.getElementById('tab-settings').innerHTML = `
     <div class="card"><h2>بداية الخطة</h2>
@@ -355,6 +359,7 @@ function renderSettings() {
       ${timeRow('log', 'تذكير تسجيل اليوم')}
       <p class="small" style="margin:10px 0 0">الإشعارات تعمل عندما يكون الرابط مفتوحاً في المتصفح، أو مثبتاً على الشاشة الرئيسية. على iPhone أضف الصفحة إلى الشاشة الرئيسية من Safari أولاً، ثم فعّل الإشعارات من داخل التطبيق.</p>
     </div>
+    ${codeCard}
     <div class="card"><h2>البيانات</h2>
       <p class="small" style="margin:0 0 10px">تُحفظ بياناتك في هذا المتصفح على هذا الجهاز فقط.</p>
       <button class="btn" data-act="reset">${resetArmed ? 'اضغط مرة أخرى للتأكيد' : 'مسح كل البيانات'}</button>
@@ -471,6 +476,33 @@ async function testPush() {
   toast(ok ? 'أُرسل إشعار تجريبي من الخادم' : 'تعذّر إرسال الإشعار التجريبي');
 }
 
+/* ---------- widget sync (shared state with the home-screen widget) ---------- */
+function genCode() {
+  const a = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  return Array.from(crypto.getRandomValues(new Uint8Array(6)), x => a[x % a.length]).join('');
+}
+let codeTimer = null;
+function scheduleCodeSync() { if (!S.code) return; clearTimeout(codeTimer); codeTimer = setTimeout(pushCode, 800); }
+async function pushCode() {
+  if (!S.code) return;
+  try {
+    await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'sync', code: S.code, start: S.start, days: S.days, updated: S.localUpdated }) });
+  } catch (e) { /* offline: the next change will sync */ }
+}
+async function pullState(manual) {
+  if (!S.code) { if (manual) toast('أنشئ رمز الويدجت أولاً'); return; }
+  try {
+    const r = await fetch(`${API}?code=${encodeURIComponent(S.code)}&tz=${-new Date().getTimezoneOffset()}`);
+    if (!r.ok) { if (manual) toast('تعذّر التحديث من الخادم'); return; }
+    const j = await r.json();
+    if (j.updated > S.localUpdated) {
+      S.days = j.days || {}; S.localUpdated = j.updated; saveLocal(); renderAll();
+      toast('تم تحديث الخطة من الويدجت');
+    } else if (manual) toast('الخطة محدّثة');
+  } catch (e) { if (manual) toast('لا يوجد اتصال بالخادم'); }
+}
+
 /* ---------- events ---------- */
 function showTab(t) {
   TAB = t;
@@ -496,6 +528,8 @@ document.getElementById('app').addEventListener('click', e => {
   else if (act === 'shop') { const i = Number(el.dataset.i); S.shop[i] = !S.shop[i]; save(); renderAll(); }
   else if (act === 'notif') { toggleNotif(); }
   else if (act === 'test') { testPush(); }
+  else if (act === 'gencode') { S.code = genCode(); save(); renderSettings(); toast('تم إنشاء الرمز'); }
+  else if (act === 'pull') { pullState(true); }
   else if (act === 'reset') {
     if (!resetArmed) { resetArmed = true; renderSettings(); setTimeout(() => { if (resetArmed) { resetArmed = false; renderSettings(); } }, 4000); return; }
     resetArmed = false;
@@ -529,7 +563,9 @@ if ('serviceWorker' in navigator) {
 renderAll();
 showTab('today');
 restoreSub();
+pullState(false);
 tick();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pullState(false); });
 setInterval(tick, 30000);
 </script>
 </body>
