@@ -15,9 +15,23 @@ android {
         versionName = "1.0"
     }
 
+    // One fixed signing key for every build, so each new APK installs over the previous one.
+    signingConfigs {
+        create("plan30") {
+            storeFile = file("../signing/plan30.jks")
+            storePassword = "plan30pass"
+            keyAlias = "plan30"
+            keyPassword = "plan30pass"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("plan30")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("plan30")
         }
     }
 
